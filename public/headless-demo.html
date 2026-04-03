@@ -24,7 +24,9 @@
   </main>
 
   <script>
+    // Địa chỉ GraphQL endpoint của Bagisto.
     const endpoint = 'graphql';
+    // Câu truy vấn chỉ lấy các trường cần hiển thị trên trang.
     const query = `
       query {
         newProducts(count: 5) {
@@ -37,8 +39,8 @@
       }
     `;
 
-    // Gọi GraphQL API qua fetch để lấy danh sách sản phẩm mới nhất từ backend Bagisto.
-    // Dữ liệu trả về sẽ được map sang card giao diện và hiển thị trực tiếp trên trang tĩnh.
+    // Gửi request POST lên GraphQL API bằng fetch.
+    // Backend sẽ trả về JSON, sau đó mình đọc dữ liệu và hiển thị ra trang.
     fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -46,8 +48,10 @@
     })
       .then((res) => res.json())
       .then((data) => {
+        // Nếu API trả về lỗi GraphQL thì dừng và báo lỗi lên giao diện.
         if (data.errors) throw new Error(data.errors[0].message);
 
+        // Chuyển dữ liệu trả về thành danh sách sản phẩm dễ hiển thị hơn.
         const products = (data.data?.newProducts || []).map((p) => {
           const flat = (p.productFlats || [])[0] || {};
 
@@ -58,6 +62,7 @@
           };
         });
 
+        // Cập nhật trạng thái và render danh sách sản phẩm lên DOM.
         document.getElementById('status').textContent = `Đã tải ${products.length} sản phẩm.`;
         document.getElementById('list').innerHTML = products.map((p) => `
           <article class="card">
@@ -68,6 +73,7 @@
         `).join('');
       })
       .catch((err) => {
+        // Nếu request thất bại, hiển thị thông báo lỗi.
         document.getElementById('status').textContent = 'Lỗi: ' + err.message;
       });
   </script>
