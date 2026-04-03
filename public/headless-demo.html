@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Headless API Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 28px; }
+    .title { font-size: 50px; margin-bottom: 8px; color:aquamarine; }
+    .muted { color: #94a3b8; }
+    .grid { margin-top: 20px; display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card { background: #111827; border: 1px solid #334155; border-radius: 14px; padding: 24px; min-height: 230px; }
+    .card strong { font-size: 24px; line-height: 1.3; display: inline-block; margin-bottom: 8px; }
+    .card p { font-size: 17px; line-height: 1.6; margin: 12px 0; }
+    .price { color: #fbbf24; font-weight: 1000; font-size: 30px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1 class="title">Nguyễn Hoài Nam - 23810310082</h1>
+    <div id="status" class="muted">Đang tải dữ liệu...</div>
+    <section id="list" class="grid"></section>
+  </main>
+
+  <script>
+    const endpoint = 'graphql';
+    const query = `
+      query {
+        newProducts(count: 5) {
+          sku
+          productFlats {
+            name
+            price
+          }
+        }
+      }
+    `;
+
+    // Gọi GraphQL API qua fetch để lấy danh sách sản phẩm mới nhất từ backend Bagisto.
+    // Dữ liệu trả về sẽ được map sang card giao diện và hiển thị trực tiếp trên trang tĩnh.
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ query })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.errors) throw new Error(data.errors[0].message);
+
+        const products = (data.data?.newProducts || []).map((p) => {
+          const flat = (p.productFlats || [])[0] || {};
+
+          return {
+            sku: p.sku,
+            name: flat.name || p.sku,
+            price: Number(flat.price || 0).toLocaleString('vi-VN') + ' VND',
+          };
+        });
+
+        document.getElementById('status').textContent = `Đã tải ${products.length} sản phẩm.`;
+        document.getElementById('list').innerHTML = products.map((p) => `
+          <article class="card">
+            <div><strong>${p.name}</strong></div>
+            <div class="muted">SKU: ${p.sku}</div>
+            <div class="price">${p.price}</div>
+          </article>
+        `).join('');
+      })
+      .catch((err) => {
+        document.getElementById('status').textContent = 'Lỗi: ' + err.message;
+      });
+  </script>
+</body>
+</html>
